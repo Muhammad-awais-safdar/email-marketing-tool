@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 
 use App\Models\Template;
 
+use App\Traits\LogsActivity;
+
 class TemplateController extends Controller
 {
+    use LogsActivity;
     public function index()
     {
         return $this->successResponse(Template::all());
@@ -22,6 +25,7 @@ class TemplateController extends Controller
         ]);
 
         $template = Template::create($validated);
+        $this->logActivity('Template Created', "Created template '{$template->name}'");
         return $this->successResponse($template, 'Template created successfully', 201);
     }
 
@@ -38,14 +42,15 @@ class TemplateController extends Controller
         ]);
 
         $template->update($validated);
-
+        $this->logActivity('Template Updated', "Updated template '{$template->name}'");
         return $this->successResponse($template, 'Template updated successfully');
     }
 
     public function destroy(Template $template)
     {
+        $name = $template->name;
         $template->delete();
-
+        $this->logActivity('Template Deleted', "Deleted template '{$name}'");
         return $this->successResponse(null, 'Template deleted successfully');
     }
 }

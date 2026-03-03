@@ -6,10 +6,13 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Traits\LogsActivity;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    use LogsActivity;
+
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -19,6 +22,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+            $this->logActivity('Login', 'User logged in successfully via web interface.');
             return response()->json(['message' => 'Logged in successfully', 'user' => Auth::user()]);
         }
 
@@ -44,11 +48,14 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        $this->logActivity('Registration', "New user account created for {$user->email}");
+
         return response()->json(['message' => 'Registered successfully', 'user' => $user], 201);
     }
 
     public function logout(Request $request)
     {
+        $this->logActivity('Logout', 'User logged out.');
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

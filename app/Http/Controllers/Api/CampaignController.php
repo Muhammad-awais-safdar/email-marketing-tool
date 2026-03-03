@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 
 use App\Models\Campaign;
 
+use App\Traits\LogsActivity;
+
 class CampaignController extends Controller
 {
+    use LogsActivity;
     public function index()
     {
         $campaigns = Campaign::with(['emailList' => function($query) {
@@ -28,6 +31,7 @@ class CampaignController extends Controller
         ]);
 
         $campaign = Campaign::create($validated);
+        $this->logActivity('Campaign Created', "Created campaign '{$campaign->name}' with subject '{$campaign->subject}'");
         return $this->successResponse($campaign, 'Campaign created successfully', 201);
     }
 
@@ -48,14 +52,15 @@ class CampaignController extends Controller
         ]);
 
         $campaign->update($validated);
-
+        $this->logActivity('Campaign Updated', "Updated campaign '{$campaign->name}'");
         return $this->successResponse($campaign, 'Campaign updated successfully');
     }
 
     public function destroy(Campaign $campaign)
     {
+        $name = $campaign->name;
         $campaign->delete();
-
+        $this->logActivity('Campaign Deleted', "Deleted campaign '{$name}'");
         return $this->successResponse(null, 'Campaign deleted successfully');
     }
 
@@ -66,7 +71,7 @@ class CampaignController extends Controller
         }
 
         \App\Jobs\SendEmailCampaign::dispatch($campaign);
-
+        $this->logActivity('Campaign Sent', "Queued campaign '{$campaign->name}' for sending.");
         return $this->successResponse(null, 'Campaign queued for sending');
     }
 }

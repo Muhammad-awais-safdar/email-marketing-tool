@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 
 use App\Models\EmailList;
 
+use App\Traits\LogsActivity;
+
 class EmailListController extends Controller
 {
+    use LogsActivity;
     public function index()
     {
         return $this->successResponse(EmailList::withCount('subscribers')->get());
@@ -22,6 +25,7 @@ class EmailListController extends Controller
         ]);
 
         $emailList = EmailList::create($validated);
+        $this->logActivity('List Created', "Created email list '{$emailList->name}'");
         return $this->successResponse($emailList, 'List created successfully', 201);
     }
 
@@ -38,14 +42,15 @@ class EmailListController extends Controller
         ]);
 
         $emailList->update($validated);
-
+        $this->logActivity('List Updated', "Updated email list '{$emailList->name}'");
         return $this->successResponse($emailList, 'List updated successfully');
     }
 
     public function destroy(EmailList $emailList)
     {
+        $name = $emailList->name;
         $emailList->delete();
-
+        $this->logActivity('List Deleted', "Deleted email list '{$name}'");
         return $this->successResponse(null, 'List deleted successfully');
     }
 }
