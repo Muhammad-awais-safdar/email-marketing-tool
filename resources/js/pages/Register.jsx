@@ -24,7 +24,7 @@ export default function Register() {
         }
 
         try {
-            await api.get("/sanctum/csrf-cookie");
+            await api.get("/sanctum/csrf-cookie", { baseURL: "/" });
             await api.post("/register", {
                 name,
                 email,

@@ -9,6 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Subscriber;
+use App\Models\Campaign;
 
 class CampaignEmail extends Mailable
 {

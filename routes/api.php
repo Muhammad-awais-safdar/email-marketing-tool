@@ -12,8 +12,11 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::apiResource('email-lists', EmailListController::class);
-Route::apiResource('subscribers', SubscriberController::class);
-Route::apiResource('campaigns', CampaignController::class);
-Route::post('campaigns/{campaign}/send', [CampaignController::class, 'send']);
-Route::apiResource('templates', TemplateController::class);
+Route::prefix('v1')->group(function () {
+    Route::apiResource('email-lists', EmailListController::class);
+    Route::apiResource('subscribers', SubscriberController::class);
+    Route::apiResource('campaigns', CampaignController::class);
+    Route::get('campaigns/{campaign}/stats', [CampaignController::class, 'stats']);
+    Route::post('campaigns/{campaign}/send', [CampaignController::class, 'send']);
+    Route::apiResource('templates', TemplateController::class);
+});

@@ -19,6 +19,8 @@ export default function Templates() {
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showVisualEditor, setShowVisualEditor] = useState(false);
+    const [previewTemplate, setPreviewTemplate] = useState(null);
+    const [editingTemplate, setEditingTemplate] = useState(null);
     const [formData, setFormData] = useState({ name: "", content: "" });
 
     useEffect(() => {
@@ -44,10 +46,15 @@ export default function Templates() {
 
     const saveTemplate = async (data) => {
         try {
-            await api.post("/templates", data);
+            if (editingTemplate) {
+                await api.put(`/templates/${editingTemplate.id}`, data);
+            } else {
+                await api.post("/templates", data);
+            }
             fetchTemplates();
             setShowCreateModal(false);
             setShowVisualEditor(false);
+            setEditingTemplate(null);
             setFormData({ name: "", content: "" });
         } catch (error) {
             console.error("Failed to save template");
@@ -61,6 +68,34 @@ export default function Templates() {
             fetchTemplates();
         } catch (error) {
             console.error("Failed to delete template");
+        }
+    };
+
+    const handleEdit = (template) => {
+        setEditingTemplate(template);
+
+        // Robust metadata parsing
+        let metadata = template.metadata;
+        if (typeof metadata === "string") {
+            try {
+                metadata = JSON.parse(metadata);
+            } catch (e) {
+                metadata = null;
+            }
+        }
+
+        // Check if it's a Visual Designer template
+        const isDesignerTemplate =
+            metadata && typeof metadata === "object" && metadata.styles;
+
+        if (isDesignerTemplate) {
+            setShowVisualEditor(true);
+        } else {
+            setFormData({
+                name: template.name || "",
+                content: template.content || "",
+            });
+            setShowCreateModal(true);
         }
     };
 
@@ -79,14 +114,21 @@ export default function Templates() {
                 </div>
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => setShowVisualEditor(true)}
+                        onClick={() => {
+                            setEditingTemplate(null);
+                            setShowVisualEditor(true);
+                        }}
                         className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold transition-all flex items-center gap-2 group"
                     >
                         <Palette className="w-4 h-4 text-indigo-400 group-hover:rotate-12 transition-transform" />
                         Visual Designer
                     </button>
                     <button
-                        onClick={() => setShowCreateModal(true)}
+                        onClick={() => {
+                            setEditingTemplate(null);
+                            setFormData({ name: "", content: "" });
+                            setShowCreateModal(true);
+                        }}
                         className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2 group"
                     >
                         <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
@@ -121,7 +163,10 @@ export default function Templates() {
                         maintain brand consistency.
                     </p>
                     <button
-                        onClick={() => setShowVisualEditor(true)}
+                        onClick={() => {
+                            setEditingTemplate(null);
+                            setShowVisualEditor(true);
+                        }}
                         className="px-8 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold transition-all"
                     >
                         Launch Designer
@@ -149,28 +194,40 @@ export default function Templates() {
                                         </h3>
                                     </div>
                                     <div className="flex gap-1">
-                                        <button className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-indigo-400 transition-all">
+                                        <button
+                                            onClick={() => handleEdit(template)}
+                                            className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-indigo-400 transition-all"
+                                        >
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() =>
                                                 handleDelete(template.id)
                                             }
-                                            className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-red-400 transition-all"
+                                            className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-rose-400 transition-all"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
                                 </div>
-                                <div className="flex-1 p-6 overflow-hidden relative">
-                                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent z-10" />
-                                    <pre className="text-[10px] text-slate-500 font-mono whitespace-pre-wrap leading-relaxed opacity-60">
-                                        {template.content}
-                                    </pre>
+                                <div className="flex-1 p-0 overflow-hidden relative bg-white/5">
+                                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent z-10 pointer-events-none" />
+                                    <div className="w-full h-full scale-[0.4] origin-top border-none pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity">
+                                        <iframe
+                                            srcDoc={template.content}
+                                            className="w-[250%] h-[250%] border-none"
+                                            title="mini-preview"
+                                        />
+                                    </div>
                                 </div>
                                 <div className="p-6 pt-0 mt-auto">
-                                    <button className="w-full py-2.5 rounded-xl border border-white/10 text-xs font-bold text-slate-400 uppercase tracking-widest hover:bg-white/5 transition-all">
-                                        Preview Template
+                                    <button
+                                        onClick={() =>
+                                            setPreviewTemplate(template)
+                                        }
+                                        className="w-full py-3 rounded-xl border border-white/10 text-xs font-bold text-slate-400 uppercase tracking-widest hover:bg-indigo-600 hover:border-indigo-600 hover:text-white transition-all shadow-lg hover:shadow-indigo-600/20"
+                                    >
+                                        Full Preview
                                     </button>
                                 </div>
                             </motion.div>
@@ -203,11 +260,16 @@ export default function Templates() {
                                         <FileText className="w-5 h-5 text-indigo-400" />
                                     </div>
                                     <h2 className="text-xl font-bold text-white tracking-tight">
-                                        Code Template
+                                        {editingTemplate
+                                            ? "Edit Template"
+                                            : "Code Template"}
                                     </h2>
                                 </div>
                                 <button
-                                    onClick={() => setShowCreateModal(false)}
+                                    onClick={() => {
+                                        setShowCreateModal(false);
+                                        setEditingTemplate(null);
+                                    }}
                                     className="p-2 hover:bg-white/5 rounded-xl text-slate-400 transition-colors"
                                 >
                                     <X className="w-5 h-5" />
@@ -283,11 +345,69 @@ export default function Templates() {
                 )}
             </AnimatePresence>
 
+            {/* Preview Modal Overlay */}
+            <AnimatePresence>
+                {previewTemplate && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setPreviewTemplate(null)}
+                            className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+                        />
+
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="glass-card w-full max-w-5xl h-full rounded-[2.5rem] overflow-hidden relative z-10 shadow-3xl border-white/10 flex flex-col"
+                        >
+                            <div className="p-6 md:px-10 h-24 flex items-center justify-between border-b border-white/5 bg-white/5 shrink-0">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                                        <Layout className="w-6 h-6 text-indigo-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white tracking-tight">
+                                            {previewTemplate.name}
+                                        </h2>
+                                        <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mt-0.5">
+                                            Live Email Render
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setPreviewTemplate(null)}
+                                    className="p-3 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all transform hover:rotate-90 duration-300"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 bg-slate-900 overflow-y-auto custom-scrollbar p-6 md:p-12">
+                                <div className="max-w-[640px] mx-auto shadow-2xl rounded-2xl overflow-hidden border border-white/5">
+                                    <iframe
+                                        srcDoc={previewTemplate.content}
+                                        className="w-full min-h-[800px] border-none"
+                                        title="full-preview"
+                                    />
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* Visual Editor Overlay */}
             <VisualTemplateEditor
                 isOpen={showVisualEditor}
-                onClose={() => setShowVisualEditor(false)}
+                onClose={() => {
+                    setShowVisualEditor(false);
+                    setEditingTemplate(null);
+                }}
                 onSave={saveTemplate}
+                initialData={editingTemplate}
             />
         </div>
     );

@@ -9,15 +9,20 @@ import {
     Search,
     Filter,
     Users,
+    Copy,
+    BarChart2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/axios";
 import CreateCampaignModal from "../components/CreateCampaignModal";
+import CampaignStatsModal from "../components/CampaignStatsModal";
 
 export default function Campaigns() {
     const [campaigns, setCampaigns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showStatsModal, setShowStatsModal] = useState(false);
+    const [selectedCampaign, setSelectedCampaign] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
@@ -42,6 +47,25 @@ export default function Campaigns() {
             fetchCampaigns();
         } catch (error) {
             console.error("Failed to send campaign");
+        }
+    };
+
+    const handleEdit = (campaign) => {
+        setSelectedCampaign(campaign);
+        setShowCreateModal(true);
+    };
+
+    const handleDuplicate = async (campaign) => {
+        try {
+            await api.post("/campaigns", {
+                name: `${campaign.name} (Copy)`,
+                subject: campaign.subject,
+                content: campaign.content,
+                email_list_id: campaign.email_list_id,
+            });
+            fetchCampaigns();
+        } catch (error) {
+            console.error("Failed to duplicate campaign");
         }
     };
 
@@ -164,11 +188,39 @@ export default function Campaigns() {
                                                     handleSend(campaign.id)
                                                 }
                                                 className="p-1.5 rounded-lg hover:bg-emerald-500/20 text-emerald-400 transition-colors"
+                                                title="Send Now"
                                             >
                                                 <Send className="w-4 h-4" />
                                             </button>
                                         )}
-                                        <button className="p-1.5 rounded-lg hover:bg-blue-500/20 text-blue-400 transition-colors">
+                                        {campaign.status !== "draft" && (
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedCampaign(
+                                                        campaign,
+                                                    );
+                                                    setShowStatsModal(true);
+                                                }}
+                                                className="p-1.5 rounded-lg hover:bg-indigo-500/20 text-indigo-400 transition-colors"
+                                                title="View Stats"
+                                            >
+                                                <BarChart2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() =>
+                                                handleDuplicate(campaign)
+                                            }
+                                            className="p-1.5 rounded-lg hover:bg-slate-500/20 text-slate-400 transition-colors"
+                                            title="Duplicate"
+                                        >
+                                            <Copy className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleEdit(campaign)}
+                                            className="p-1.5 rounded-lg hover:bg-blue-500/20 text-blue-400 transition-colors"
+                                            title="Edit"
+                                        >
                                             <Edit className="w-4 h-4" />
                                         </button>
                                         <button
@@ -199,11 +251,17 @@ export default function Campaigns() {
                                             ).toLocaleDateString()}
                                         </span>
                                     </div>
-                                    <div className="flex items-center gap-1 font-bold text-slate-300">
-                                        <Users className="w-3.5 h-3.5 text-indigo-400" />
-                                        <span>
-                                            {campaign.email_list
-                                                ?.subscribers_count || 0}
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="flex items-center gap-1 font-bold text-slate-300">
+                                            <Users className="w-3.5 h-3.5 text-indigo-400" />
+                                            <span>
+                                                {campaign.email_list
+                                                    ?.subscribers_count || 0}
+                                            </span>
+                                        </div>
+                                        <span className="text-[9px] text-slate-600 uppercase tracking-tighter truncate max-w-[80px]">
+                                            {campaign.email_list?.name ||
+                                                "No List"}
                                         </span>
                                     </div>
                                 </div>
@@ -215,8 +273,24 @@ export default function Campaigns() {
 
             <CreateCampaignModal
                 isOpen={showCreateModal}
-                onClose={() => setShowCreateModal(false)}
-                onSuccess={fetchCampaigns}
+                initialData={selectedCampaign}
+                onClose={() => {
+                    setShowCreateModal(false);
+                    setSelectedCampaign(null);
+                }}
+                onSuccess={() => {
+                    fetchCampaigns();
+                    setSelectedCampaign(null);
+                }}
+            />
+
+            <CampaignStatsModal
+                isOpen={showStatsModal}
+                campaign={selectedCampaign}
+                onClose={() => {
+                    setShowStatsModal(false);
+                    setSelectedCampaign(null);
+                }}
             />
         </div>
     );

@@ -4,6 +4,7 @@ import {
     Edit,
     Trash2,
     UserPlus,
+    Users,
     Upload,
     Search,
     Filter,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
     X,
     Save,
@@ -13,29 +14,72 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function VisualTemplateEditor({ isOpen, onClose, onSave }) {
-    const [templateData, setTemplateData] = useState({
-        name: "My Custom Template",
-        styles: {
-            backgroundColor: "#0f172a",
-            textColor: "#f8fafc",
-            cardBackgroundColor: "#1e293b",
-            borderRadius: "24",
-            paddingX: "40",
-            paddingY: "60",
-            textAlign: "center",
-            fontSize: "16",
-            accentColor: "#6366f1",
-        },
-        content: {
-            header: "Welcome to Our Newsletter",
-            body: "Design your perfect email template visually and save it instantly. Change colors, spacing, and content to match your brand.",
-            buttonText: "Get Started Now",
-            footer: "© 2024 Your Brand. All rights reserved.",
-        },
-    });
+const defaultTemplateData = {
+    name: "My Custom Template",
+    subject: "Hot New Items Just for You!",
+    styles: {
+        backgroundColor: "#0f172a",
+        textColor: "#f8fafc",
+        cardBackgroundColor: "#1e293b",
+        borderRadius: "24",
+        paddingX: "40",
+        paddingY: "60",
+        textAlign: "center",
+        fontSize: "16",
+        accentColor: "#6366f1",
+    },
+    content: {
+        header: "Welcome to Our Newsletter",
+        body: "Design your perfect email template visually and save it instantly. Change colors, spacing, and content to match your brand.",
+        buttonText: "Get Started Now",
+        footer: "© 2026 Awais Safdar. All rights reserved.",
+    },
+};
+
+export default function VisualTemplateEditor({
+    isOpen,
+    onClose,
+    onSave,
+    initialData = null,
+}) {
+    const [templateData, setTemplateData] = useState(defaultTemplateData);
 
     const [generatedHtml, setGeneratedHtml] = useState("");
+
+    useEffect(() => {
+        if (isOpen) {
+            let metadata = initialData?.metadata;
+            if (typeof metadata === "string") {
+                try {
+                    metadata = JSON.parse(metadata);
+                } catch (e) {
+                    metadata = null;
+                }
+            }
+
+            if (metadata && typeof metadata === "object" && metadata.content) {
+                // Full restoration for Visual Designer templates
+                setTemplateData({
+                    ...metadata,
+                    name: initialData.name || metadata.name,
+                    subject:
+                        initialData.subject ||
+                        metadata.subject ||
+                        defaultTemplateData.subject,
+                });
+            } else if (initialData) {
+                // Fallback for Code Templates (show defaults but keep Name)
+                setTemplateData({
+                    ...defaultTemplateData,
+                    name: initialData.name,
+                    subject: initialData.subject || defaultTemplateData.subject,
+                });
+            } else {
+                // Complete reset for New Templates
+                setTemplateData(defaultTemplateData);
+            }
+        }
+    }, [isOpen, initialData]);
 
     useEffect(() => {
         generateHtml();
@@ -61,7 +105,9 @@ export default function VisualTemplateEditor({ isOpen, onClose, onSave }) {
     const handleSave = () => {
         onSave({
             name: templateData.name,
+            subject: templateData.subject,
             content: generatedHtml,
+            metadata: templateData,
         });
         onClose();
     };
@@ -82,8 +128,8 @@ export default function VisualTemplateEditor({ isOpen, onClose, onSave }) {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-slate-950 overflow-hidden">
+    return createPortal(
+        <div className="fixed inset-0 z-[9900] flex flex-col bg-slate-950 overflow-hidden font-sans">
             {/* Toolbar */}
             <div className="h-20 bg-slate-900 border-b border-white/5 flex items-center justify-between px-8 shrink-0">
                 <div className="flex items-center gap-4">
@@ -104,6 +150,25 @@ export default function VisualTemplateEditor({ isOpen, onClose, onSave }) {
                         <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold ml-1 mt-0.5">
                             Visual Designer Alpha
                         </p>
+                    </div>
+                </div>
+
+                <div className="flex-1 max-w-md mx-8">
+                    <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Type className="w-4 h-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                        </div>
+                        <input
+                            placeholder="Default Email Subject..."
+                            value={templateData.subject}
+                            onChange={(e) =>
+                                setTemplateData({
+                                    ...templateData,
+                                    subject: e.target.value,
+                                })
+                            }
+                            className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all"
+                        />
                     </div>
                 </div>
 
@@ -306,6 +371,19 @@ export default function VisualTemplateEditor({ isOpen, onClose, onSave }) {
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-indigo-500/50 transition-all"
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <label className="text-xs text-slate-500 ml-1">
+                                    Copyright text
+                                </label>
+                                <input
+                                    type="text"
+                                    value={templateData.content.footer}
+                                    onChange={(e) =>
+                                        updateContent("footer", e.target.value)
+                                    }
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-indigo-500/50 transition-all"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -340,6 +418,7 @@ export default function VisualTemplateEditor({ isOpen, onClose, onSave }) {
                     </motion.div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }

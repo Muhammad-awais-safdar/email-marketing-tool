@@ -216,7 +216,14 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
                                     </strong>{" "}
                                     Ensure your first row contains headers.
                                     Duplicate emails will be skipped
-                                    automatically.
+                                    automatically.{" "}
+                                    <a
+                                        href="/subscribers_demo.csv"
+                                        download
+                                        className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 font-bold ml-1"
+                                    >
+                                        Download Demo CSV
+                                    </a>
                                 </p>
                             </div>
 

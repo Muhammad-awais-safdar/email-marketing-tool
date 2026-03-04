@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 export default function CustomCursor() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -11,19 +11,24 @@ export default function CustomCursor() {
         };
 
         const handleMouseOver = (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A' || e.target.closest('button') || e.target.closest('a')) {
+            if (
+                e.target.tagName === "BUTTON" ||
+                e.target.tagName === "A" ||
+                e.target.closest("button") ||
+                e.target.closest("a")
+            ) {
                 setIsHovering(true);
             } else {
                 setIsHovering(false);
             }
         };
 
-        window.addEventListener('mousemove', updateMousePosition);
-        window.addEventListener('mouseover', handleMouseOver);
+        window.addEventListener("mousemove", updateMousePosition);
+        window.addEventListener("mouseover", handleMouseOver);
 
         return () => {
-            window.removeEventListener('mousemove', updateMousePosition);
-            window.removeEventListener('mouseover', handleMouseOver);
+            window.removeEventListener("mousemove", updateMousePosition);
+            window.removeEventListener("mouseover", handleMouseOver);
         };
     }, []);
 
@@ -31,7 +36,7 @@ export default function CustomCursor() {
         <>
             {/* Main cursor dot */}
             <motion.div
-                className="fixed top-0 left-0 w-2 h-2 bg-indigo-600 rounded-full pointer-events-none z-[9999] mix-blend-difference"
+                className="fixed top-0 left-0 w-2 h-2 bg-indigo-600 rounded-full pointer-events-none z-[10000] mix-blend-difference"
                 animate={{
                     x: mousePosition.x - 4,
                     y: mousePosition.y - 4,
@@ -47,7 +52,7 @@ export default function CustomCursor() {
 
             {/* Cursor ring */}
             <motion.div
-                className="fixed top-0 left-0 w-8 h-8 border-2 border-indigo-500 rounded-full pointer-events-none z-[9999] mix-blend-difference"
+                className="fixed top-0 left-0 w-8 h-8 border-2 border-indigo-500 rounded-full pointer-events-none z-[10000] mix-blend-difference"
                 animate={{
                     x: mousePosition.x - 16,
                     y: mousePosition.y - 16,

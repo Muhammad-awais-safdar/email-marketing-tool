@@ -15,7 +15,7 @@ export default function Login() {
         setError("");
         setIsLoading(true);
         try {
-            await api.get("/sanctum/csrf-cookie");
+            await api.get("/sanctum/csrf-cookie", { baseURL: "/" });
             await api.post("/login", { email, password });
             window.location.href = "/dashboard";
         } catch (err) {
@@ -92,7 +92,7 @@ export default function Login() {
                                             Password
                                         </label>
                                         <Link
-                                            to="#"
+                                            to="/forgot-password"
                                             className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
                                         >
                                             Forgot password?

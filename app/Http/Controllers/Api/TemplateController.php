@@ -21,7 +21,9 @@ class TemplateController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'subject' => 'nullable|string|max:255',
             'content' => 'required|string',
+            'metadata' => 'nullable|array',
         ]);
 
         $template = Template::create($validated);
@@ -38,7 +40,9 @@ class TemplateController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'subject' => 'nullable|string|max:255',
             'content' => 'required|string',
+            'metadata' => 'nullable|array',
         ]);
 
         $template->update($validated);

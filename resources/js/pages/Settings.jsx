@@ -12,6 +12,7 @@ import {
     Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import api from "../lib/axios";
 
 export default function Settings() {
     const [formData, setFormData] = useState({
@@ -25,23 +26,64 @@ export default function Settings() {
         mail_from_name: "",
     });
     const [saving, setSaving] = useState(false);
+    const [testing, setTesting] = useState(false);
+    const [testStatus, setTestStatus] = useState(null);
 
     useEffect(() => {
-        const saved = localStorage.getItem("email_settings");
-        if (saved) {
-            setFormData(JSON.parse(saved));
-        }
+        fetchSettings();
     }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const response = await api.get("/settings");
+            if (response.data.Result) {
+                setFormData((prev) => ({
+                    ...prev,
+                    ...response.data.Result,
+                }));
+            }
+        } catch (error) {
+            console.error("Failed to fetch settings:", error);
+        }
+    };
+
+    const handleTestConnection = async () => {
+        setTesting(true);
+        setTestStatus(null);
+        try {
+            const response = await api.post("/settings/test-connection", {
+                settings: formData,
+            });
+            setTestStatus({
+                type: "success",
+                message: response.data.statusMessage,
+            });
+        } catch (error) {
+            setTestStatus({
+                type: "error",
+                message:
+                    error.response?.data?.statusMessage || "Connection failed",
+            });
+        } finally {
+            setTesting(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         try {
-            localStorage.setItem("email_settings", JSON.stringify(formData));
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 800));
+            await api.post("/settings", { settings: formData });
+            setTestStatus({
+                type: "success",
+                message: "Settings saved successfully",
+            });
         } catch (error) {
-            console.error("Failed to save settings");
+            console.error("Failed to save settings:", error);
+            setTestStatus({
+                type: "error",
+                message: "Failed to save settings",
+            });
         } finally {
             setSaving(false);
         }
@@ -307,11 +349,30 @@ export default function Settings() {
                             Save your settings first, then perform a delivery
                             test to ensure everything is wired correctly.
                         </p>
+
+                        {testStatus && (
+                            <div
+                                className={`mb-4 p-3 rounded-xl text-xs font-medium border ${
+                                    testStatus.type === "success"
+                                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                        : "bg-red-500/10 border-red-500/20 text-red-400"
+                                }`}
+                            >
+                                {testStatus.message}
+                            </div>
+                        )}
+
                         <button
                             type="button"
-                            className="w-full py-3 rounded-xl border border-white/10 text-slate-400 text-sm font-bold hover:bg-white/5 transition-all text-center uppercase tracking-widest"
+                            onClick={handleTestConnection}
+                            disabled={testing}
+                            className="w-full py-3 rounded-xl border border-white/10 text-slate-400 text-sm font-bold hover:bg-white/5 transition-all text-center uppercase tracking-widest flex items-center justify-center gap-2"
                         >
-                            Test Connection
+                            {testing ? (
+                                <div className="w-4 h-4 border-2 border-slate-400/30 border-t-slate-400 rounded-full animate-spin" />
+                            ) : (
+                                "Test Connection"
+                            )}
                         </button>
                     </div>
 
