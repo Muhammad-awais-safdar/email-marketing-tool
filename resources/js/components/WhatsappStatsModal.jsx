@@ -4,19 +4,18 @@ import {
     CheckCircle2,
     XCircle,
     Users,
-    Mail,
+    MessageSquare,
     Calendar,
     Search,
-    ChevronLeft,
-    ChevronRight,
     AlertCircle,
     TrendingUp,
+    Phone,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/axios";
 import { useToast } from "../context/ToastContext";
 
-export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
+export default function WhatsappStatsModal({ isOpen, onClose, campaign }) {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -31,10 +30,12 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
     const fetchStats = async () => {
         setLoading(true);
         try {
-            const response = await api.get(`/campaigns/${campaign.id}/stats`);
+            const response = await api.get(
+                `/v1/whatsapp-campaigns/${campaign.id}/stats`,
+            );
             setStats(response.data.Result);
         } catch (error) {
-            toast.error("Failed to load campaign statistics.");
+            toast.error("Failed to load WhatsApp campaign statistics.");
         } finally {
             setLoading(false);
         }
@@ -45,10 +46,10 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
     const filteredLogs =
         stats?.logs?.filter(
             (log) =>
-                (log.subscriber_name || "")
+                (log.contact_name || "")
                     .toLowerCase()
                     .includes(searchTerm.toLowerCase()) ||
-                (log.subscriber_email || "")
+                (log.phone_number || "")
                     .toLowerCase()
                     .includes(searchTerm.toLowerCase()),
         ) || [];
@@ -104,12 +105,12 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
                         {/* Header */}
                         <div className="p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                    <TrendingUp className="w-6 h-6 text-indigo-400" />
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                    <TrendingUp className="w-6 h-6 text-emerald-400" />
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold text-white tracking-tight">
-                                        Campaign Report
+                                        WhatsApp Campaign Report
                                     </h2>
                                     <p className="text-xs text-slate-500 font-medium">
                                         {campaign.name}
@@ -126,9 +127,9 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
 
                         {loading ? (
                             <div className="p-20 flex flex-col items-center justify-center">
-                                <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4" />
+                                <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mb-4" />
                                 <p className="text-slate-400 font-medium animate-pulse">
-                                    Analyzing delivery data...
+                                    Retrieving delivery data...
                                 </p>
                             </div>
                         ) : (
@@ -139,10 +140,10 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
                                         title="Total Targeted"
                                         value={stats?.total || 0}
                                         icon={Users}
-                                        color="indigo"
+                                        color="emerald"
                                     />
                                     <StatCard
-                                        title="Emails Delivered"
+                                        title="Delivered"
                                         value={stats?.sent || 0}
                                         subValue={`${stats?.total > 0 ? Math.round((stats?.sent / stats?.total) * 100) : 0}%`}
                                         icon={CheckCircle2}
@@ -161,21 +162,21 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between px-1">
                                         <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
-                                            <Mail className="w-4 h-4 text-indigo-400" />
-                                            Detailed Delivery Logs
+                                            <MessageSquare className="w-4 h-4 text-emerald-400" />
+                                            Transmission Logs
                                         </h3>
                                         <div className="relative">
                                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
                                             <input
                                                 type="text"
-                                                placeholder="Search subscriber..."
+                                                placeholder="Search contact or phone..."
                                                 value={searchTerm}
                                                 onChange={(e) =>
                                                     setSearchTerm(
                                                         e.target.value,
                                                     )
                                                 }
-                                                className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white outline-none focus:border-indigo-500/50 transition-all w-64"
+                                                className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white outline-none focus:border-emerald-500/50 transition-all w-64"
                                             />
                                         </div>
                                     </div>
@@ -185,7 +186,7 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
                                             <thead>
                                                 <tr className="border-b border-white/5 bg-white/5">
                                                     <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                                        Subscriber
+                                                        Contact
                                                     </th>
                                                     <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                                                         Status
@@ -207,13 +208,12 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
                                                         <td className="px-6 py-4">
                                                             <div className="flex flex-col">
                                                                 <span className="text-sm font-bold text-white">
-                                                                    {
-                                                                        log.subscriber_name
-                                                                    }
+                                                                    {log.contact_name ||
+                                                                        "Anonymous"}
                                                                 </span>
-                                                                <span className="text-xs text-slate-500">
+                                                                <span className="text-xs text-emerald-400/60 font-mono">
                                                                     {
-                                                                        log.subscriber_email
+                                                                        log.phone_number
                                                                     }
                                                                 </span>
                                                             </div>
@@ -265,12 +265,12 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
                                                         >
                                                             <div className="flex flex-col items-center gap-3">
                                                                 <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                                                                    <Mail className="w-6 h-6 text-slate-600" />
+                                                                    <MessageSquare className="w-6 h-6 text-slate-600" />
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-slate-400 font-medium">
                                                                         No
-                                                                        delivery
+                                                                        transmission
                                                                         records
                                                                         found
                                                                         yet.
@@ -282,10 +282,8 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
                                                                         the
                                                                         campaign,
                                                                         please
-                                                                        wait a
-                                                                        few
-                                                                        moments
-                                                                        for the
+                                                                        wait for
+                                                                        the
                                                                         queue to
                                                                         process.
                                                                     </p>
@@ -303,7 +301,7 @@ export default function CampaignStatsModal({ isOpen, onClose, campaign }) {
 
                         <div className="p-6 border-t border-white/5 bg-white/2 flex justify-between items-center">
                             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-[0.2em]">
-                                Data synchronized with live mail server
+                                Verified WhatsApp API stats
                             </p>
                             <button
                                 onClick={onClose}

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/axios";
+import { useToast } from "../context/ToastContext";
 
 export default function CreateCampaignModal({
     isOpen,
@@ -30,6 +31,7 @@ export default function CreateCampaignModal({
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(false);
     const [previewMode, setPreviewMode] = useState(false);
+    const toast = useToast();
 
     useEffect(() => {
         if (isOpen) {
@@ -68,7 +70,7 @@ export default function CreateCampaignModal({
             const response = await api.get("/email-lists");
             setLists(response.data.Result || []);
         } catch (error) {
-            console.error("Failed to fetch lists:", error);
+            toast.error("Failed to load email lists.");
         }
     };
 
@@ -79,7 +81,7 @@ export default function CreateCampaignModal({
             // Handle both array-based and object-based results (pagination vs all)
             setTemplates(result?.data || result || []);
         } catch (error) {
-            console.error("Failed to fetch templates:", error);
+            toast.error("Failed to load templates.");
         }
     };
 
@@ -108,10 +110,15 @@ export default function CreateCampaignModal({
             } else {
                 await api.post("/campaigns", formData);
             }
+            toast.success(
+                initialData?.id ? "Campaign updated!" : "Campaign created!",
+            );
             onSuccess();
             onClose();
         } catch (error) {
-            console.error("Failed to save campaign");
+            toast.error(
+                "Failed to save campaign. Please check required fields.",
+            );
         } finally {
             setLoading(false);
         }
@@ -385,7 +392,9 @@ export default function CreateCampaignModal({
                                         onChange={(e) =>
                                             setFormData({
                                                 ...formData,
-                                                send_delay: parseInt(e.target.value) || 0,
+                                                send_delay:
+                                                    parseInt(e.target.value) ||
+                                                    0,
                                             })
                                         }
                                     />

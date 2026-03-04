@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/axios";
 import CreateCampaignModal from "../components/CreateCampaignModal";
 import CampaignStatsModal from "../components/CampaignStatsModal";
+import { useToast } from "../context/ToastContext";
 
 export default function Campaigns() {
     const [campaigns, setCampaigns] = useState([]);
@@ -24,6 +25,7 @@ export default function Campaigns() {
     const [showStatsModal, setShowStatsModal] = useState(false);
     const [selectedCampaign, setSelectedCampaign] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const toast = useToast();
 
     useEffect(() => {
         fetchCampaigns();
@@ -35,7 +37,7 @@ export default function Campaigns() {
             const response = await api.get("/campaigns");
             setCampaigns(response.data.Result?.data || []);
         } catch (error) {
-            console.error("Failed to fetch campaigns:", error);
+            toast.error("Failed to load campaigns. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -44,9 +46,12 @@ export default function Campaigns() {
     const handleSend = async (campaignId) => {
         try {
             await api.post(`/campaigns/${campaignId}/send`);
+            toast.success("Campaign queued for sending!");
             fetchCampaigns();
         } catch (error) {
-            console.error("Failed to send campaign");
+            toast.error(
+                "Failed to queue campaign. Please check your settings.",
+            );
         }
     };
 
@@ -63,9 +68,10 @@ export default function Campaigns() {
                 content: campaign.content,
                 email_list_id: campaign.email_list_id,
             });
+            toast.success("Campaign duplicated successfully!");
             fetchCampaigns();
         } catch (error) {
-            console.error("Failed to duplicate campaign");
+            toast.error("Failed to duplicate campaign. Please try again.");
         }
     };
 
@@ -73,9 +79,10 @@ export default function Campaigns() {
         if (!confirm("Are you sure you want to delete this campaign?")) return;
         try {
             await api.delete(`/campaigns/${campaignId}`);
+            toast.success("Campaign deleted successfully.");
             fetchCampaigns();
         } catch (error) {
-            console.error("Failed to delete campaign");
+            toast.error("Failed to delete campaign. It might be in use.");
         }
     };
 

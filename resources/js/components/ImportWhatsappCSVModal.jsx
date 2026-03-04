@@ -12,9 +12,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/axios";
 import { useToast } from "../context/ToastContext";
 
-export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
+export default function ImportWhatsappCSVModal({ isOpen, onClose, onSuccess }) {
     const [file, setFile] = useState(null);
-    const [emailListId, setEmailListId] = useState("");
+    const [whatsappListId, setWhatsappListId] = useState("");
     const [lists, setLists] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -28,16 +28,20 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
 
     const fetchLists = async () => {
         try {
-            const response = await api.get("/email-lists");
+            const response = await api.get("/v1/whatsapp-lists");
             setLists(response.data.Result || []);
         } catch (error) {
-            toast.error("Failed to load email lists.");
+            toast.error("Failed to load WhatsApp lists.");
         }
     };
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
-        if (selectedFile && selectedFile.type === "text/csv") {
+        if (
+            selectedFile &&
+            (selectedFile.type === "text/csv" ||
+                selectedFile.name.endsWith(".csv"))
+        ) {
             setFile(selectedFile);
         } else {
             toast.warning("Please select a valid CSV file");
@@ -47,38 +51,52 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!file || !emailListId) return;
+        if (!file || !whatsappListId) return;
 
         setLoading(true);
         try {
             const text = await file.text();
-            const rows = text
-                .split("\n")
-                .filter((r) => r.trim())
-                .slice(1); // Skip header
+            const lines = text.split("\n").filter((r) => r.trim());
+            const rows = lines.slice(1); // Skip header
 
             let successCount = 0;
+            let failCount = 0;
+
             for (const row of rows) {
-                const [email, name] = row.split(",").map((s) => s.trim());
-                if (email) {
-                    try {
-                        await api.post("/subscribers", {
-                            email,
-                            name: name || "",
-                            email_list_id: emailListId,
-                        });
-                        successCount++;
-                    } catch (err) {
-                        console.error(`Failed to import ${email}:`, err);
+                const parts = row.split(",").map((s) => s.trim());
+                if (parts.length >= 1) {
+                    const phone_number = parts[0];
+                    const name = parts[1] || "";
+                    if (phone_number) {
+                        try {
+                            await api.post("/v1/whatsapp-contacts", {
+                                phone_number,
+                                name,
+                                whatsapp_list_id: whatsappListId,
+                            });
+                            successCount++;
+                        } catch (err) {
+                            failCount++;
+                        }
                     }
                 }
             }
 
-            toast.success(`Successfully imported ${successCount} contacts!`);
+            if (successCount > 0) {
+                toast.success(
+                    `Successfully imported ${successCount} WhatsApp contacts!`,
+                );
+            }
+            if (failCount > 0) {
+                toast.error(
+                    `Failed to import ${failCount} contacts. Check duplicates.`,
+                );
+            }
+
             onSuccess();
             onClose();
             setFile(null);
-            setEmailListId("");
+            setWhatsappListId("");
         } catch (error) {
             toast.error("Failed to import CSV. Please check the file format.");
         } finally {
@@ -102,16 +120,16 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="glass-card w-full max-w-md rounded-3xl overflow-hidden relative z-10 shadow-2xl border-white/10"
+                        className="glass-card w-full max-w-md rounded-3xl overflow-hidden relative z-10 shadow-2xl border border-white/10"
                     >
                         {/* Header */}
                         <div className="p-6 h-20 flex items-center justify-between border-b border-white/5 bg-white/5">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                                    <Upload className="w-5 h-5 text-indigo-400" />
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                    <Upload className="w-5 h-5 text-emerald-400" />
                                 </div>
                                 <h2 className="text-xl font-bold text-white tracking-tight">
-                                    Bulk Import
+                                    WhatsApp Bulk Import
                                 </h2>
                             </div>
                             <button
@@ -126,15 +144,15 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
                         <form onSubmit={handleSubmit} className="p-8 space-y-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-300 ml-1">
-                                    Target List
+                                    Target WhatsApp List
                                 </label>
                                 <div className="relative group">
                                     <select
                                         required
                                         className="w-full px-4 py-3 rounded-xl glass-input outline-none appearance-none cursor-pointer"
-                                        value={emailListId}
+                                        value={whatsappListId}
                                         onChange={(e) =>
-                                            setEmailListId(e.target.value)
+                                            setWhatsappListId(e.target.value)
                                         }
                                     >
                                         <option
@@ -153,7 +171,7 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
                                             </option>
                                         ))}
                                     </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none group-focus-within:text-indigo-400 transition-colors" />
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none group-focus-within:text-emerald-400 transition-colors" />
                                 </div>
                             </div>
 
@@ -164,9 +182,9 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
                                 <div
                                     className={`relative rounded-2xl border-2 border-dashed transition-all p-8 flex flex-col items-center justify-center gap-4 ${
                                         isDragging
-                                            ? "border-indigo-500 bg-indigo-500/5"
+                                            ? "border-emerald-500 bg-emerald-500/5"
                                             : "border-white/10 hover:border-white/20"
-                                    } ${file ? "bg-indigo-500/5 border-indigo-500/30" : ""}`}
+                                    } ${file ? "bg-emerald-500/5 border-emerald-500/30" : ""}`}
                                     onDragOver={(e) => {
                                         e.preventDefault();
                                         setIsDragging(true);
@@ -176,7 +194,11 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
                                         e.preventDefault();
                                         setIsDragging(false);
                                         const f = e.dataTransfer.files[0];
-                                        if (f?.type === "text/csv") setFile(f);
+                                        if (
+                                            f?.type === "text/csv" ||
+                                            f?.name.endsWith(".csv")
+                                        )
+                                            setFile(f);
                                     }}
                                 >
                                     <input
@@ -187,43 +209,41 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
                                     />
                                     {file ? (
                                         <div className="text-center">
-                                            <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center mx-auto mb-3">
-                                                <FileText className="w-6 h-6 text-indigo-400" />
+                                            <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+                                                <FileText className="w-6 h-6 text-emerald-400" />
                                             </div>
                                             <p className="text-sm font-bold text-white max-w-[200px] truncate">
                                                 {file.name}
                                             </p>
-                                            <p className="text-xs text-indigo-400/60 mt-1 uppercase tracking-widest">
+                                            <p className="text-xs text-emerald-400/60 mt-1 uppercase tracking-widest">
                                                 Ready to upload
                                             </p>
                                         </div>
                                     ) : (
                                         <div className="text-center group-hover:scale-105 transition-transform duration-300">
-                                            <Upload className="mx-auto h-10 w-10 text-slate-600 mb-2 transition-colors group-hover:text-indigo-400" />
+                                            <Upload className="mx-auto h-10 w-10 text-slate-600 mb-2 transition-colors group-hover:text-emerald-400" />
                                             <p className="text-sm font-medium text-slate-300">
                                                 Drop your file here
                                             </p>
                                             <p className="text-xs text-slate-500 mt-1 italic">
-                                                Expects columns: email, name
+                                                Expects: phone_number, name
                                             </p>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 flex items-start gap-3">
-                                <AlertCircle className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                            <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex items-start gap-3">
+                                <AlertCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                                 <p className="text-xs text-slate-400 leading-relaxed">
-                                    <strong className="text-indigo-300">
+                                    <strong className="text-emerald-300">
                                         Tip:
                                     </strong>{" "}
-                                    Ensure your first row contains headers.
-                                    Duplicate emails will be skipped
-                                    automatically.{" "}
+                                    Ensure phone numbers include country codes.{" "}
                                     <a
-                                        href="/subscribers_demo.csv"
+                                        href="/whatsapp_contacts_demo.csv"
                                         download
-                                        className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 font-bold ml-1"
+                                        className="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 font-bold ml-1"
                                     >
                                         Download Demo CSV
                                     </a>
@@ -242,8 +262,10 @@ export default function ImportCSVModal({ isOpen, onClose, onSuccess }) {
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     type="submit"
-                                    disabled={loading || !file || !emailListId}
-                                    className="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-600/20 disabled:opacity-50 transition-all flex items-center gap-2 group"
+                                    disabled={
+                                        loading || !file || !whatsappListId
+                                    }
+                                    className="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all flex items-center gap-2 group"
                                 >
                                     {loading ? (
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

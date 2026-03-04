@@ -12,7 +12,7 @@ class SettingController extends Controller
 {
     public function index()
     {
-        $settings = Setting::all()->pluck('value', 'key');
+        $settings = Setting::where('user_id', auth()->id())->get()->pluck('value', 'key');
         return $this->successResponse($settings);
     }
 
@@ -24,12 +24,15 @@ class SettingController extends Controller
 
         foreach ($validated['settings'] as $key => $value) {
             Setting::updateOrCreate(
-                ['key' => $key],
+                ['user_id' => auth()->id(), 'key' => $key],
                 ['value' => $value]
             );
         }
 
-        return $this->successResponse(Setting::all()->pluck('value', 'key'), 'Settings updated successfully');
+        return $this->successResponse(
+            Setting::where('user_id', auth()->id())->get()->pluck('value', 'key'),
+            'Settings updated successfully'
+        );
     }
 
     public function testConnection(Request $request)

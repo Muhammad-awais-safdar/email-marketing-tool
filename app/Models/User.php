@@ -38,11 +38,26 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
+    public function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function whatsappLists()
+    {
+        return $this->hasMany(WhatsappList::class);
+    }
+
+    public function whatsappTemplates()
+    {
+        return $this->hasMany(WhatsappTemplate::class);
+    }
+
+    public function whatsappCampaigns()
+    {
+        return $this->hasMany(WhatsappCampaign::class);
     }
 }

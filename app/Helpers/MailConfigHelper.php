@@ -7,9 +7,12 @@ use Illuminate\Support\Facades\Config;
 
 class MailConfigHelper
 {
-    public static function apply()
+    public static function apply($userId = null)
     {
-        $settings = Setting::all()->pluck('value', 'key')->toArray();
+        $userId = $userId ?: auth()->id();
+        if (!$userId) return;
+
+        $settings = Setting::where('user_id', $userId)->get()->pluck('value', 'key')->toArray();
 
         // Map settings to Laravel mailer config
         $config = [

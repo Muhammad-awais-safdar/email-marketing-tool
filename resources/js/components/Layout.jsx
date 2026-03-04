@@ -12,6 +12,8 @@ import {
     ChevronRight,
     Sparkles,
     User,
+    MessageSquare,
+    MessageCircle,
 } from "lucide-react";
 import api from "../lib/axios";
 
@@ -39,42 +41,86 @@ export default function Layout() {
         }
     };
 
-    const navItems = [
+    const navigation = [
         {
-            path: "/dashboard",
-            label: "Dashboard",
-            icon: LayoutDashboard,
-            color: "text-blue-400",
+            title: "Overview",
+            items: [
+                {
+                    path: "/dashboard",
+                    label: "Email Dashboard",
+                    icon: LayoutDashboard,
+                    color: "text-blue-400",
+                },
+                {
+                    path: "/whatsapp-dashboard",
+                    label: "WA Dashboard",
+                    icon: LayoutDashboard,
+                    color: "text-emerald-400",
+                },
+            ],
         },
         {
-            path: "/campaigns",
-            label: "Campaigns",
-            icon: Mail,
-            color: "text-indigo-400",
+            title: "Email Marketing",
+            items: [
+                {
+                    path: "/campaigns",
+                    label: "Campaigns",
+                    icon: Mail,
+                    color: "text-indigo-400",
+                },
+                {
+                    path: "/lists",
+                    label: "Lists",
+                    icon: Users,
+                    color: "text-indigo-400",
+                },
+                {
+                    path: "/templates",
+                    label: "Templates",
+                    icon: Mail,
+                    color: "text-indigo-400",
+                },
+            ],
         },
         {
-            path: "/subscribers",
-            label: "Subscribers",
-            icon: Users,
-            color: "text-purple-400",
+            title: "WhatsApp Marketing",
+            items: [
+                {
+                    path: "/whatsapp-campaigns",
+                    label: "Campaigns",
+                    icon: MessageSquare,
+                    color: "text-emerald-400",
+                },
+                {
+                    path: "/whatsapp-lists",
+                    label: "Lists",
+                    icon: Users,
+                    color: "text-emerald-400",
+                },
+                {
+                    path: "/whatsapp-contacts",
+                    label: "Contacts",
+                    icon: Sparkles,
+                    color: "text-emerald-400",
+                },
+                {
+                    path: "/whatsapp-templates",
+                    label: "Templates",
+                    icon: MessageCircle,
+                    color: "text-emerald-400",
+                },
+            ],
         },
         {
-            path: "/lists",
-            label: "Email Lists",
-            icon: Users,
-            color: "text-pink-400",
-        },
-        {
-            path: "/templates",
-            label: "Templates",
-            icon: Mail,
-            color: "text-orange-400",
-        },
-        {
-            path: "/settings",
-            label: "Settings",
-            icon: Settings,
-            color: "text-slate-400",
+            title: "System",
+            items: [
+                {
+                    path: "/settings",
+                    label: "Settings",
+                    icon: Settings,
+                    color: "text-slate-400",
+                },
+            ],
         },
     ];
 
@@ -149,40 +195,52 @@ export default function Layout() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
-                    {navItems.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                            <Link key={item.path} to={item.path}>
-                                <motion.div
-                                    whileHover={{ x: 4 }}
-                                    className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group ${
-                                        isActive
-                                            ? "bg-white/5 text-white shadow-inner"
-                                            : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
-                                    }`}
-                                >
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="active-indicator"
-                                            className="absolute left-0 w-1 h-6 bg-indigo-500 rounded-full"
-                                        />
-                                    )}
-                                    <item.icon
-                                        className={`w-5 h-5 ${item.color} ${isActive ? "opacity-100" : "opacity-60 group-hover:opacity-100"} transition-opacity`}
-                                    />
-                                    {isSidebarOpen && (
-                                        <span className="text-sm font-medium whitespace-nowrap">
-                                            {item.label}
-                                        </span>
-                                    )}
-                                    {isActive && isSidebarOpen && (
-                                        <ChevronRight className="w-4 h-4 ml-auto text-indigo-400/50" />
-                                    )}
-                                </motion.div>
-                            </Link>
-                        );
-                    })}
+                <nav className="flex-1 px-4 py-6 space-y-8 overflow-y-auto overflow-x-hidden custom-scrollbar">
+                    {navigation.map((group) => (
+                        <div key={group.title} className="space-y-2">
+                            {isSidebarOpen && (
+                                <h3 className="px-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4">
+                                    {group.title}
+                                </h3>
+                            )}
+                            <div className="space-y-1">
+                                {group.items.map((item) => {
+                                    const isActive =
+                                        location.pathname === item.path;
+                                    return (
+                                        <Link key={item.path} to={item.path}>
+                                            <motion.div
+                                                whileHover={{ x: 4 }}
+                                                className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group ${
+                                                    isActive
+                                                        ? "bg-white/5 text-white shadow-inner"
+                                                        : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+                                                }`}
+                                            >
+                                                {isActive && (
+                                                    <motion.div
+                                                        layoutId="active-indicator"
+                                                        className="absolute left-0 w-1 h-6 bg-indigo-500 rounded-full"
+                                                    />
+                                                )}
+                                                <item.icon
+                                                    className={`w-5 h-5 ${item.color} ${isActive ? "opacity-100" : "opacity-60 group-hover:opacity-100"} transition-opacity`}
+                                                />
+                                                {isSidebarOpen && (
+                                                    <span className="text-sm font-medium whitespace-nowrap">
+                                                        {item.label}
+                                                    </span>
+                                                )}
+                                                {isActive && isSidebarOpen && (
+                                                    <ChevronRight className="w-4 h-4 ml-auto text-indigo-400/50" />
+                                                )}
+                                            </motion.div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </nav>
 
                 {/* Footer/Logout */}
@@ -255,32 +313,48 @@ export default function Layout() {
                                 </button>
                             </div>
 
-                            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                                {navItems.map((item) => {
-                                    const isActive =
-                                        location.pathname === item.path;
-                                    return (
-                                        <Link key={item.path} to={item.path}>
-                                            <div
-                                                className={`flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${
-                                                    isActive
-                                                        ? "bg-indigo-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/10"
-                                                        : "text-slate-400 hover:bg-white/5"
-                                                }`}
-                                            >
-                                                <item.icon
-                                                    className={`w-6 h-6 ${item.color}`}
-                                                />
-                                                <span className="font-semibold">
-                                                    {item.label}
-                                                </span>
-                                                {isActive && (
-                                                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500" />
-                                                )}
-                                            </div>
-                                        </Link>
-                                    );
-                                })}
+                            <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+                                {navigation.map((group) => (
+                                    <div
+                                        key={group.title}
+                                        className="space-y-2"
+                                    >
+                                        <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">
+                                            {group.title}
+                                        </h3>
+                                        <div className="space-y-1">
+                                            {group.items.map((item) => {
+                                                const isActive =
+                                                    location.pathname ===
+                                                    item.path;
+                                                return (
+                                                    <Link
+                                                        key={item.path}
+                                                        to={item.path}
+                                                    >
+                                                        <div
+                                                            className={`flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${
+                                                                isActive
+                                                                    ? "bg-indigo-600/20 text-white border border-indigo-500/30 shadow-lg shadow-indigo-500/10"
+                                                                    : "text-slate-400 hover:bg-white/5"
+                                                            }`}
+                                                        >
+                                                            <item.icon
+                                                                className={`w-6 h-6 ${item.color}`}
+                                                            />
+                                                            <span className="font-semibold">
+                                                                {item.label}
+                                                            </span>
+                                                            {isActive && (
+                                                                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500" />
+                                                            )}
+                                                        </div>
+                                                    </Link>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
                             </nav>
 
                             <div className="p-4 border-t border-white/10 space-y-3">
