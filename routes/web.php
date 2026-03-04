@@ -8,6 +8,12 @@ use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\TemplateController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Api\WhatsappListController;
+use App\Http\Controllers\Api\WhatsappContactController;
+use App\Http\Controllers\Api\WhatsappTemplateController;
+use App\Http\Controllers\Api\WhatsappCampaignController;
+use App\Http\Controllers\Api\WhatsappStatsController;
+use App\Http\Controllers\Api\SettingController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -24,15 +30,32 @@ Route::prefix('api')->group(function () {
     Route::get('/user', [AuthController::class, 'user'])->middleware('auth');
 
     Route::middleware(['web', 'auth'])->group(function () {
+        // Email Marketing Routes
         Route::apiResource('email-lists', EmailListController::class);
         Route::apiResource('subscribers', SubscriberController::class);
         Route::apiResource('campaigns', CampaignController::class);
         Route::get('campaigns/{campaign}/stats', [CampaignController::class, 'stats']);
         Route::post('campaigns/{campaign}/send', [CampaignController::class, 'send']);
         Route::apiResource('templates', TemplateController::class);
-        Route::get('settings', [\App\Http\Controllers\Api\SettingController::class, 'index']);
-        Route::post('settings', [\App\Http\Controllers\Api\SettingController::class, 'store']);
-        Route::post('settings/test-connection', [\App\Http\Controllers\Api\SettingController::class, 'testConnection']);
+
+        // WhatsApp Marketing Routes (v1 prefix to match frontend)
+        Route::prefix('v1')->group(function () {
+            Route::apiResource('whatsapp-lists', WhatsappListController::class);
+            Route::apiResource('whatsapp-contacts', WhatsappContactController::class);
+            Route::apiResource('whatsapp-templates', WhatsappTemplateController::class);
+            Route::apiResource('whatsapp-campaigns', WhatsappCampaignController::class);
+            Route::get('whatsapp-campaigns/{whatsappCampaign}/stats', [WhatsappStatsController::class, 'show']);
+            Route::post('whatsapp-campaigns/{whatsappCampaign}/send', [WhatsappCampaignController::class, 'send']);
+            Route::post('whatsapp-campaigns/{whatsappCampaign}/duplicate', [WhatsappCampaignController::class, 'duplicate']);
+        });
+
+        // Settings Routes
+        Route::get('settings', [SettingController::class, 'index']);
+        Route::post('settings', [SettingController::class, 'store']);
+        Route::post('settings/test-connection', [SettingController::class, 'testConnection']);
+        Route::post('settings/test-whatsapp', [SettingController::class, 'testWhatsapp']);
+
+        // Stats & Global Routes
         Route::get('dashboard/stats', [DashboardController::class, 'index']);
 
         // Auth Routes (JSON versions)
