@@ -37,7 +37,5 @@ class MailConfigHelper
             Config::set('mail.from.name', $settings['mail_from_name']);
         }
 
-        // Force Laravel to re-read the mailer configuration if needed
-        // (Usually Config::set is enough for the duration of the request)
     }
 }
